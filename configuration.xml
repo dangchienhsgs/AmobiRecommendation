@@ -1,0 +1,39 @@
+<configuration>
+
+    <algorithm>
+
+        <kmeans-times>100</kmeans-times>
+
+        <amobi-times>200</amobi-times>
+
+    </algorithm>
+
+    <advertisement>
+        <coefficient>
+            <area>1</area>
+            <audiences>5</audiences>
+            <category>5</category>
+            <gender>1</gender>
+            <device>1</device>
+            <screensize>1</screensize>
+            <type>3</type>
+        </coefficient>
+    </advertisement>
+
+
+    <application>
+        <coeffient>
+            <audiences>4</audiences>
+            <type>1</type>
+            <category>3</category>
+            <gender>2</gender>
+            <device>1</device>
+            <smartstatus>1</smartstatus>
+            <rate>1</rate>
+            <like>1</like>
+            <download>1</download>
+        </coeffient>
+    </application>
+
+
+</configuration>

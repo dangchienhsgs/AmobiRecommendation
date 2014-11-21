@@ -3,18 +3,26 @@ package sql;
 import org.jscience.mathematics.number.Real;
 import org.jscience.mathematics.vector.DenseMatrix;
 import org.jscience.mathematics.vector.DenseVector;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import utils.NumberUtils;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class AppReader {
     public static final String NAME="name";
     public static final String CODE="code";
+
     public static final String APP_AUDIENCES="audiences";
     public static final int NUMBER_FIELD_AUDIENCES=8;
     public static final String APP_CATEGORY="category";
@@ -35,26 +43,79 @@ public class AppReader {
     public static final String APP_LIKE="like";
     public static final int APP_MAX_LIKE=24;
 
-    private List<Integer> list_category;
-    private List<Integer> list_audiences;
 
-    public List<String> idList;
+    public static long APP_DEVICE_COEFF=1;
+    public static long APP_CATEGORY_COEFF=1;
+    public static long APP_AUDIENCES_COEFF=1;
+    public static long APP_GENDER_COEFF=1;
+    public static long APP_SMART_STATUS_COEFF=1;
+    public static long APP_RATE_COEFF=1;
+    public static long APP_DOWNLOAD_COEFF=1;
+    public static long APP_LIKE_COEFF=1;
+
+    private static List<Integer> list_category= CategoryReader.getListCategory();
+
+    private static Integer[] arrayAudiences={
+            1, 2, 3, 4, 5, 6, 7, 8
+    };
+
+    private static List<Integer> list_audiences= Arrays.asList(arrayAudiences);
+
+    public List<String> idList=new ArrayList<String>();
+
     public AppReader() {
-        list_category= CategoryReader.getListCategory();
-        idList=new ArrayList<String>();
-
-        list_audiences=new ArrayList<Integer>();
-
-        list_audiences.add(1);
-        list_audiences.add(2);
-        list_audiences.add(3);
-        list_audiences.add(4);
-        list_audiences.add(5);
-        list_audiences.add(6);
-        list_audiences.add(7);
-        list_audiences.add(8);
+        readConfiguration();
     }
 
+    private void readConfiguration() {
+        try {
+            File xmlConfiguration = new File("configuration.xml");
+
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
+            Document doc = dBuilder.parse(xmlConfiguration);
+
+            doc.getDocumentElement().normalize();
+
+            // Read Advertisement
+
+            Element application = (Element) doc.getElementsByTagName("application").item(0);
+
+            APP_CATEGORY_COEFF = Long.parseLong(
+                    application.getElementsByTagName("category").item(0).getTextContent().trim()
+            );
+
+            APP_AUDIENCES_COEFF=Long.parseLong(
+                    application.getElementsByTagName("audiences").item(0).getTextContent().trim()
+            );
+
+            APP_DOWNLOAD_COEFF=Long.parseLong(
+                    application.getElementsByTagName("download").item(0).getTextContent().trim()
+            );
+            APP_GENDER_COEFF=Long.parseLong(
+                    application.getElementsByTagName("gender").item(0).getTextContent().trim()
+            );
+            APP_LIKE_COEFF=Long.parseLong(
+                    application.getElementsByTagName("like").item(0).getTextContent().trim()
+            );
+
+            APP_RATE_COEFF=Long.parseLong(
+                    application.getElementsByTagName("rate").item(0).getTextContent().trim()
+            );
+            APP_SMART_STATUS_COEFF=Long.parseLong(
+                    application.getElementsByTagName("smartstatus").item(0).getTextContent().trim()
+            );
+
+            APP_DEVICE_COEFF=Long.parseLong(
+                    application.getElementsByTagName("device").item(0).getTextContent().trim()
+            );
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public DenseMatrix<Real> read(){
 
@@ -67,95 +128,48 @@ public class AppReader {
 
             List<DenseVector<Real>> listDenseVector=new ArrayList<DenseVector<Real>>();
 
-            int dimension=0;
             while (resultSet.next()){
+
+                // start read vector
                 int index_columns=0;
+
+                // init vector
                 List<Real> list=new ArrayList<Real>();
 
-                // Add to IdList
+                // add index of vector to index list
                 idList.add(resultSet.getString(CODE));
 
-                // Get audiences;
-                list=NumberUtils.addZero(list, list_audiences.size());
+                // analyze audiences
+
                 String audiences=resultSet.getString(APP_AUDIENCES);
-                if (audiences==null){
-                    for (int i=0; i<NUMBER_FIELD_AUDIENCES; i++){
-                        list.set(index_columns + i, Real.ONE.divide(NUMBER_FIELD_AUDIENCES));
-                    }
-                } else {
-                    audiences=audiences.replace(","," ").trim();
+                List<Real> audiencesResult=analyzeAudiences(audiences, APP_AUDIENCES_COEFF);
+                NumberUtils.addToList(audiencesResult, list);
 
-                    if (audiences.isEmpty()){
-                        for (int i=0; i<NUMBER_FIELD_AUDIENCES; i++){
-                            list.set(index_columns + i, Real.ONE.divide(NUMBER_FIELD_AUDIENCES));
-                        }
-                    } else {
-                        String[] listAudiences=audiences.split(" ");
-                        Real value=Real.ONE.divide(listAudiences.length);
-
-                        for (String temp:listAudiences){
-                            int position=Integer.parseInt(temp);
-                            list.set(position + index_columns - 1, value);
-                        }
-                    }
-                }
                 index_columns=index_columns+NUMBER_FIELD_AUDIENCES;
 
                 // get category
-                NumberUtils.addZero(list, list_category.size());
                 String categories=resultSet.getString(APP_CATEGORY);
-                if (categories==null){
-                    for (int i=0; i<list_category.size(); i++){
-                        list.set(index_columns + i, Real.ONE.divide(list_category.size()));
-                    }
-                } else {
-                    categories=categories.replace(",", " ").trim();
-                    if (categories.isEmpty()){
-                        for (int i=0; i<list_category.size(); i++){
-                            list.set(index_columns + i, Real.ONE.divide(list_category.size()));
-                        }
-                    } else {
-                        String[] app_categories=categories.split(" ");
-                        Real value=Real.ONE.divide(app_categories.length);
-                        for (String temp:app_categories){
-                            int position=list_category.indexOf(Integer.parseInt(temp));
-                            list.set(position + index_columns, value);
-                        }
-                    }
-                }
+                List<Real> categoriesResult=analyzeCategories(categories, APP_CATEGORY_COEFF);
+                NumberUtils.addToList(categoriesResult, list);
+
                 index_columns=index_columns+list_category.size();
+
 
                 //get Status
                 NumberUtils.addZero(list, 1);
                 int status=resultSet.getInt(APP_STATUS);
-                list.set(index_columns, Real.valueOf(MAX_APP_STATUS - status).divide(MAX_APP_STATUS));
+                list.set(index_columns, Real.valueOf(MAX_APP_STATUS - status).divide(MAX_APP_STATUS).times(APP_SMART_STATUS_COEFF));
                 index_columns++;
 
                 //get App gender
-                NumberUtils.addZero(list, 1);
-                String gender=resultSet.getString(APP_GENDER);
-                if (gender==null){
-                    list.set(index_columns, Real.valueOf(1.5));
-                } else {
-                    gender=gender.replace(","," ").trim();
-                    if (gender.isEmpty()){
-                        list.set(index_columns, Real.valueOf(0.25));
-                    } else {
-                        String[] app_gender=gender.split(" ");
-                        if (app_gender.length==2){
-                            list.set(index_columns, Real.valueOf(0.25));
-                        } else {
-                            Real value=Real.valueOf(MAX_APP_GENDER-Integer.parseInt(app_gender[0])).divide(MAX_APP_GENDER);
-                            list.set(index_columns, value);
-                        }
-                    }
-                }
+                List<Real> genderResult=analyzeGender(resultSet.getString(APP_GENDER), APP_GENDER_COEFF);
+                NumberUtils.addToList(genderResult, list);
                 index_columns++;
 
                 //get App Smart Status
                 NumberUtils.addZero(list, 1);
                 int appSmartStatus=resultSet.getInt(APP_SMART_STATUS);
-                list.set(index_columns, Real.valueOf(appSmartStatus));
+                list.set(index_columns, Real.valueOf(appSmartStatus).times(APP_SMART_STATUS_COEFF));
                 index_columns++;
 
                 // Get App rate;
@@ -164,7 +178,7 @@ public class AppReader {
                 if (rate==null){
                     rate=0;
                 }
-                list.set(index_columns, Real.valueOf(APP_MAX_RATE - rate).divide(APP_MAX_RATE));
+                list.set(index_columns, Real.valueOf(APP_MAX_RATE - rate).divide(APP_MAX_RATE).times(APP_RATE_COEFF));
                 index_columns++;
 
                 // Get App Download
@@ -173,7 +187,7 @@ public class AppReader {
                 if (download==null){
                     download=0;
                 }
-                list.set(index_columns, Real.valueOf(APP_MAX_DOWNLOAD - download).divide(APP_MAX_DOWNLOAD));
+                list.set(index_columns, Real.valueOf(APP_MAX_DOWNLOAD - download).divide(APP_MAX_DOWNLOAD).times(APP_DOWNLOAD_COEFF));
                 index_columns++;
 
                 //get App Like
@@ -182,12 +196,11 @@ public class AppReader {
                 if (like==null){
                     like=0;
                 }
-                list.set(index_columns, Real.valueOf(APP_MAX_LIKE - like).divide(APP_MAX_LIKE));
+                list.set(index_columns, Real.valueOf(APP_MAX_LIKE - like).divide(APP_MAX_LIKE).times(APP_LIKE_COEFF));
                 index_columns++;
 
                 //
                 NumberUtils.addZero(list, 1);
-                dimension=index_columns;
                 DenseVector<Real> vector=DenseVector.valueOf(list);
                 listDenseVector.add(vector);
             }
@@ -206,10 +219,99 @@ public class AppReader {
             return null;
         }
     }
+
+
+
+    public static List<Real> analyzeAudiences(String audiences, long coeff){
+        List<Real> list=new ArrayList<Real>();
+        NumberUtils.addZero(list, NUMBER_FIELD_AUDIENCES);
+
+        if (audiences==null){
+
+            for (int i=0; i<NUMBER_FIELD_AUDIENCES; i++){
+                list.add(Real.ONE.divide(NUMBER_FIELD_AUDIENCES).times(coeff));
+            }
+
+        } else {
+
+            audiences=audiences.replace(","," ").trim();
+
+            if (audiences.isEmpty()){
+                for (int i=0; i<NUMBER_FIELD_AUDIENCES; i++){
+                    list.add(Real.ONE.divide(NUMBER_FIELD_AUDIENCES).times(coeff));
+                }
+            } else {
+                String[] listAudiences=audiences.split(" ");
+                Real value=Real.ONE.divide(listAudiences.length);
+
+                for (String temp:listAudiences){
+                    int position=Integer.parseInt(temp)-1;
+                    list.set(position, value.times(coeff));
+                }
+            }
+        }
+        return list;
+    }
+
+
+    public static List<Real> analyzeCategories(String categories, long coeff){
+        List<Real> list=new ArrayList<Real>();
+        NumberUtils.addZero(list, list_category.size());
+        if (categories==null){
+            for (int i=0; i<list_category.size(); i++){
+                list.add(Real.ONE.divide(list_category.size()).times(coeff));
+            }
+        } else {
+            categories=categories.replace(",", " ").trim();
+            if (categories.isEmpty()){
+                for (int i=0; i<list_category.size(); i++){
+                    list.add(Real.ONE.divide(list_category.size()).times(coeff));
+                }
+            } else {
+                String[] app_categories=categories.split(" ");
+                Real value=Real.ONE.divide(app_categories.length).times(coeff);
+
+                for (String temp:app_categories){
+                    int position=list_category.indexOf(Integer.parseInt(temp));
+                    list.set(position, value);
+                }
+            }
+        }
+
+        return list;
+    }
+
+    public static List<Real> analyzeGender(String gender, long coeff){
+        List<Real> list=new ArrayList<Real>();
+        NumberUtils.addZero(list, 1);
+
+        if (gender==null){
+            list.set(0, Real.valueOf(0.25));
+        } else {
+            gender=gender.replace(","," ").trim();
+            if (gender.isEmpty()){
+                list.set(0, Real.valueOf(0.25));
+            } else {
+                String[] app_gender=gender.split(" ");
+                if (app_gender.length==2){
+                    list.set(0, Real.valueOf(0.25));
+                } else {
+                    Real value=Real.valueOf(MAX_APP_GENDER-Integer.parseInt(app_gender[0])).divide(MAX_APP_GENDER);
+                    list.set(0, value);
+                }
+            }
+        }
+
+        list.set(0, list.get(0).times(coeff));
+        return list;
+    }
+
+
     public static void main(String args[]){
         AppReader reader=new AppReader();
         DenseMatrix<Real> matrix = reader.read();
 
+        System.out.println (matrix.toString());
         NumberUtils.printList("application_list.txt", reader.idList);
     }
 }

@@ -34,6 +34,12 @@ public class NumberUtils {
         return result;
     }
 
+    public static void addToList(List<Real> element, List<Real> host){
+        for (Real str:element){
+            host.add(str);
+        }
+    }
+
     public static List<Real> addZero(List<Real> list, int number){
         for (int i=0; i<number; i++){
             list.add(Real.ZERO);

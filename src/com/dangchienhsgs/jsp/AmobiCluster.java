@@ -1,5 +1,10 @@
+package com.dangchienhsgs.jsp;
+
 import org.jscience.mathematics.number.Real;
 import org.jscience.mathematics.vector.DenseMatrix;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import sql.AdReader;
 import sql.AppReader;
 import sql.LinkConverter;
@@ -8,6 +13,9 @@ import utils.KMeans;
 import utils.MatrixUtilities;
 import utils.NumberUtils;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
 import java.util.Arrays;
 
 public class AmobiCluster {
@@ -33,13 +41,46 @@ public class AmobiCluster {
 
 
     private int kTimes = 100;
+    private int amobiTimes=200;
 
-    public AmobiCluster(int K1, int K2, int KTimes) {
-        this.numAdGroup = K1;
-        this.numAppGroup = K2;
-        this.kTimes=KTimes;
+    public AmobiCluster(int numAdGroup, int numAppGroup) {
+        this.numAdGroup = numAdGroup;
+        this.numAppGroup = numAppGroup;
 
         initData();
+
+        initConfiguration();
+    }
+
+    public void initConfiguration() {
+        try {
+            File xmlConfiguration = new File("configuration.xml");
+
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
+            Document doc = dBuilder.parse(xmlConfiguration);
+
+            doc.getDocumentElement().normalize();
+
+            // Read common configuration
+
+            Node conAlgorithm = doc.getElementsByTagName("algorithm").item(0);
+
+            Element element = (Element) conAlgorithm;
+
+            kTimes = Integer.parseInt(
+                    element.getElementsByTagName("kmeans-times").item(0).getTextContent().trim()
+            );
+
+
+            amobiTimes = Integer.parseInt(
+                    element.getElementsByTagName("amobi-times").item(0).getTextContent().trim()
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void initData(){
@@ -64,7 +105,7 @@ public class AmobiCluster {
         appAdMatrix = MatrixUtilities.normalizeMatrix(appAdMatrix);
     }
 
-    public void executeICCA(int times) {
+    public void executeICCA() {
         System.out.println("Cluster Adv Matrix to GA...");
         GA = new KMeans(numAdGroup, adMatrix).execute(this.kTimes);
 
@@ -73,7 +114,7 @@ public class AmobiCluster {
         GU = new KMeans(numAppGroup, appMatrix).execute(this.kTimes);
 
         System.out.println("Progress Cluster AGUA and UGAU start....");
-        for (int i = 0; i < times; i++) {
+        for (int i = 0; i < amobiTimes; i++) {
 
             System.out.println("Cluster AGUA to update GA times " + i + "...");
             AGU = MatrixUtilities.normalizeMatrix(computeRelation(adMatrix, GU, appAdMatrix));
@@ -163,4 +204,7 @@ public class AmobiCluster {
         return DenseMatrix.valueOf(w);
     }
 
+    public static void main(String args[]){
+        new AmobiCluster(3, 5).executeICCA();
+    }
 }

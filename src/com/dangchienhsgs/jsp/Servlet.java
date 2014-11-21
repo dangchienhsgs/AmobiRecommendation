@@ -28,9 +28,8 @@ public class Servlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         int K=Integer.parseInt(request.getParameter("num_ad_cluster"));
         int L=Integer.parseInt(request.getParameter("num_app_cluster"));
-        int k_times=Integer.parseInt(request.getParameter("k_means_times"));
-        int loop_times=Integer.parseInt(request.getParameter("loop_times"));
 
 
+        new AmobiCluster(K, L).executeICCA();
     }
 }

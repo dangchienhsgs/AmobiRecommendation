@@ -1,7 +1,5 @@
-package utils;
+package com.dangchienhsgs.utils;
 
-
-import org.jscience.mathematics.number.Real;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -34,23 +32,33 @@ public class NumberUtils {
         return result;
     }
 
-    public static void addToList(List<Real> element, List<Real> host){
-        for (Real str:element){
+    public static void addToList(List<Double> element, List<Double> host){
+        for (Double str:element){
             host.add(str);
         }
     }
 
-    public static List<Real> addZero(List<Real> list, int number){
+    public static List<Double> addZero(List<Double> list, int number){
         for (int i=0; i<number; i++){
-            list.add(Real.ZERO);
+            list.add(Double.valueOf(0));
         }
         return list;
     }
     public static void main(String args[]){
-        List<Real> a=new ArrayList<Real>();
+        List<Double> a=new ArrayList<Double>();
         NumberUtils.addZero(a, 3);
 
         System.out.println (a.get(2));
+    }
+
+    public static double[] convertListToArray(List<Double> list){
+        double array[]=new double[list.size()];
+
+        for (int i=0; i<list.size(); i++){
+            array[i]=list.get(i);
+        }
+
+        return array;
     }
 
     public static void printList(String fileName, List<?> list){

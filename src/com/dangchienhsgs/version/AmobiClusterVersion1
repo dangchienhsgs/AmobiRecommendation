@@ -6,7 +6,6 @@ import org.la4j.matrix.dense.Basic2DMatrix;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
 import com.dangchienhsgs.sql.AdReader;
 import com.dangchienhsgs.sql.AppReader;
 import com.dangchienhsgs.sql.LinkConverter;
@@ -45,9 +44,12 @@ public class AmobiCluster {
     private int kTimes = 100;
     private int amobiTimes=200;
 
-    public AmobiCluster() {
+    public AmobiCluster(int numAdGroup, int numAppGroup) {
+        this.numAdGroup = numAdGroup;
+        this.numAppGroup = numAppGroup;
 
         initData();
+
         initConfiguration();
     }
 
@@ -57,8 +59,6 @@ public class AmobiCluster {
      */
     public void initConfiguration() {
         try {
-
-            // Begin read configuration
             File xmlConfiguration = new File("configuration.xml");
 
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -68,18 +68,11 @@ public class AmobiCluster {
 
             doc.getDocumentElement().normalize();
 
+            // Read common configuration
 
-            // Begin read configuration
             Node conAlgorithm = doc.getElementsByTagName("algorithm").item(0);
 
             Element element = (Element) conAlgorithm;
-
-            numAdGroup=Integer.parseInt(
-                    element.getElementsByTagName("num-ad-cluster").item(0).getTextContent().trim()
-            );
-            numAppGroup=Integer.parseInt(
-                    element.getElementsByTagName("num-app-cluster").item(0).getTextContent().trim()
-            );
 
             kTimes = Integer.parseInt(
                     element.getElementsByTagName("kmeans-times").item(0).getTextContent().trim()
@@ -89,7 +82,6 @@ public class AmobiCluster {
             amobiTimes = Integer.parseInt(
                     element.getElementsByTagName("amobi-times").item(0).getTextContent().trim()
             );
-
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -111,11 +103,7 @@ public class AmobiCluster {
         appMatrix = appReader.read();
         appMatrix = MatrixUtilities.normalizeMatrix(appMatrix);
 
-        linkReader = new LinkReader(
-                adReader.idList,
-                appReader.idList,
-                new LinkConverter().getLinkIDAdvIDMap()
-        );
+        linkReader = new LinkReader(adReader.idList, appReader.idList, new LinkConverter().getLinkIDAdvIDMap());
 
         System.out.println("Reading Adv-App Relation Matrix...");
         adAppMatrix = linkReader.read();
@@ -259,6 +247,6 @@ public class AmobiCluster {
     }
 
     public static void main(String args[]){
-        new AmobiCluster().executeICCA();
+        new AmobiCluster(3, 5).executeICCA();
     }
 }

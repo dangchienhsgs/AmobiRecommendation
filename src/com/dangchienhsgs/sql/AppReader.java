@@ -1,12 +1,10 @@
-package sql;
+package com.dangchienhsgs.sql;
 
-import org.jscience.mathematics.number.Real;
-import org.jscience.mathematics.vector.DenseMatrix;
-import org.jscience.mathematics.vector.DenseVector;
+
+import org.la4j.matrix.dense.Basic2DMatrix;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import utils.NumberUtils;
+import com.dangchienhsgs.utils.NumberUtils;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -117,7 +115,7 @@ public class AppReader {
         }
     }
 
-    public DenseMatrix<Real> read(){
+    public Basic2DMatrix read(){
 
         try{
             Class.forName(Config.DB_DRIVER);
@@ -126,7 +124,7 @@ public class AppReader {
             String query="select * from widget_app";
             ResultSet resultSet=connection.createStatement().executeQuery(query);
 
-            List<DenseVector<Real>> listDenseVector=new ArrayList<DenseVector<Real>>();
+            List<List<Double>> listMatrix=new ArrayList<List<Double>>();
 
             while (resultSet.next()){
 
@@ -134,7 +132,7 @@ public class AppReader {
                 int index_columns=0;
 
                 // init vector
-                List<Real> list=new ArrayList<Real>();
+                List<Double> list=new ArrayList<Double>();
 
                 // add index of vector to index list
                 idList.add(resultSet.getString(CODE));
@@ -142,14 +140,14 @@ public class AppReader {
                 // analyze audiences
 
                 String audiences=resultSet.getString(APP_AUDIENCES);
-                List<Real> audiencesResult=analyzeAudiences(audiences, APP_AUDIENCES_COEFF);
+                List<Double> audiencesResult=analyzeAudiences(audiences, APP_AUDIENCES_COEFF);
                 NumberUtils.addToList(audiencesResult, list);
 
                 index_columns=index_columns+NUMBER_FIELD_AUDIENCES;
 
                 // get category
                 String categories=resultSet.getString(APP_CATEGORY);
-                List<Real> categoriesResult=analyzeCategories(categories, APP_CATEGORY_COEFF);
+                List<Double> categoriesResult=analyzeCategories(categories, APP_CATEGORY_COEFF);
                 NumberUtils.addToList(categoriesResult, list);
 
                 index_columns=index_columns+list_category.size();
@@ -158,18 +156,18 @@ public class AppReader {
                 //get Status
                 NumberUtils.addZero(list, 1);
                 int status=resultSet.getInt(APP_STATUS);
-                list.set(index_columns, Real.valueOf(MAX_APP_STATUS - status).divide(MAX_APP_STATUS).times(APP_SMART_STATUS_COEFF));
+                list.set(index_columns, Double.valueOf(MAX_APP_STATUS - status)/Double.valueOf(MAX_APP_STATUS)*(APP_SMART_STATUS_COEFF));
                 index_columns++;
 
                 //get App gender
-                List<Real> genderResult=analyzeGender(resultSet.getString(APP_GENDER), APP_GENDER_COEFF);
+                List<Double> genderResult=analyzeGender(resultSet.getString(APP_GENDER), APP_GENDER_COEFF);
                 NumberUtils.addToList(genderResult, list);
                 index_columns++;
 
                 //get App Smart Status
                 NumberUtils.addZero(list, 1);
                 int appSmartStatus=resultSet.getInt(APP_SMART_STATUS);
-                list.set(index_columns, Real.valueOf(appSmartStatus).times(APP_SMART_STATUS_COEFF));
+                list.set(index_columns, Double.valueOf(appSmartStatus)*(APP_SMART_STATUS_COEFF));
                 index_columns++;
 
                 // Get App rate;
@@ -178,7 +176,7 @@ public class AppReader {
                 if (rate==null){
                     rate=0;
                 }
-                list.set(index_columns, Real.valueOf(APP_MAX_RATE - rate).divide(APP_MAX_RATE).times(APP_RATE_COEFF));
+                list.set(index_columns, Double.valueOf(APP_MAX_RATE - rate)/Double.valueOf(APP_MAX_RATE)*(APP_RATE_COEFF));
                 index_columns++;
 
                 // Get App Download
@@ -187,7 +185,7 @@ public class AppReader {
                 if (download==null){
                     download=0;
                 }
-                list.set(index_columns, Real.valueOf(APP_MAX_DOWNLOAD - download).divide(APP_MAX_DOWNLOAD).times(APP_DOWNLOAD_COEFF));
+                list.set(index_columns, Double.valueOf(APP_MAX_DOWNLOAD - download)/Double.valueOf(APP_MAX_DOWNLOAD)*(APP_DOWNLOAD_COEFF));
                 index_columns++;
 
                 //get App Like
@@ -196,18 +194,20 @@ public class AppReader {
                 if (like==null){
                     like=0;
                 }
-                list.set(index_columns, Real.valueOf(APP_MAX_LIKE - like).divide(APP_MAX_LIKE).times(APP_LIKE_COEFF));
+                list.set(index_columns, Double.valueOf(APP_MAX_LIKE - like)/Double.valueOf(APP_MAX_LIKE)*(APP_LIKE_COEFF));
                 index_columns++;
 
                 //
-                NumberUtils.addZero(list, 1);
-                DenseVector<Real> vector=DenseVector.valueOf(list);
-                listDenseVector.add(vector);
+                listMatrix.add(list);
             }
 
-            DenseMatrix<Real> matrix=DenseMatrix.valueOf(listDenseVector);
+            double arrayMatrix[][]=new double[listMatrix.size()][listMatrix.get(0).size()];
+
+            for (int i=0; i<arrayMatrix.length; i++){
+                arrayMatrix[i]= NumberUtils.convertListToArray(listMatrix.get(i));
+            }
             connection.close();
-            return matrix;
+            return new Basic2DMatrix(arrayMatrix);
 
         } catch (ClassNotFoundException e){
             e.printStackTrace();
@@ -222,14 +222,15 @@ public class AppReader {
 
 
 
-    public static List<Real> analyzeAudiences(String audiences, long coeff){
-        List<Real> list=new ArrayList<Real>();
+    public static List<Double> analyzeAudiences(String audiences, long coeff){
+        List<Double> list=new ArrayList<Double>();
         NumberUtils.addZero(list, NUMBER_FIELD_AUDIENCES);
 
         if (audiences==null){
 
+            // if null
             for (int i=0; i<NUMBER_FIELD_AUDIENCES; i++){
-                list.add(Real.ONE.divide(NUMBER_FIELD_AUDIENCES).times(coeff));
+                list.set(i, Double.valueOf(1) / Double.valueOf(NUMBER_FIELD_AUDIENCES) * (coeff));
             }
 
         } else {
@@ -237,43 +238,87 @@ public class AppReader {
             audiences=audiences.replace(","," ").trim();
 
             if (audiences.isEmpty()){
+
+                // if empty
                 for (int i=0; i<NUMBER_FIELD_AUDIENCES; i++){
-                    list.add(Real.ONE.divide(NUMBER_FIELD_AUDIENCES).times(coeff));
+                    list.set(i, Double.valueOf(1) / Double.valueOf(NUMBER_FIELD_AUDIENCES) * (coeff));
                 }
+
             } else {
+
+                // not empty
+
                 String[] listAudiences=audiences.split(" ");
-                Real value=Real.ONE.divide(listAudiences.length);
+                Double value=Double.valueOf(1)/Double.valueOf(listAudiences.length);
+
+                // check if after check valid of element, the array do not contains any thing
+                // return true: contains something, false: not contains any thing
+                boolean check=false;
 
                 for (String temp:listAudiences){
-                    int position=Integer.parseInt(temp)-1;
-                    list.set(position, value.times(coeff));
+                    int element=Integer.parseInt(temp);
+
+                    // check if the element of array is valid
+                    if (list_audiences.contains(element)){
+                        list.set(element-1, value*(coeff));
+                        check=true;
+                    }
+                }
+
+
+                if (!check){
+
+                    // if array do not contains any valid element
+                    for (int i=0; i<NUMBER_FIELD_AUDIENCES; i++){
+                        list.set(i, Double.valueOf(1)/Double.valueOf(NUMBER_FIELD_AUDIENCES)*(coeff));
+                    }
                 }
             }
         }
+
+        //System.out.println (list);
         return list;
     }
 
 
-    public static List<Real> analyzeCategories(String categories, long coeff){
-        List<Real> list=new ArrayList<Real>();
+    public static List<Double> analyzeCategories(String categories, long coeff){
+        List<Double> list=new ArrayList<Double>();
         NumberUtils.addZero(list, list_category.size());
         if (categories==null){
+
+            // if null
             for (int i=0; i<list_category.size(); i++){
-                list.add(Real.ONE.divide(list_category.size()).times(coeff));
+                list.set(i, Double.valueOf(1) / Double.valueOf(list_category.size()) * (coeff));
             }
         } else {
+
             categories=categories.replace(",", " ").trim();
             if (categories.isEmpty()){
+
+                // if empty
                 for (int i=0; i<list_category.size(); i++){
-                    list.add(Real.ONE.divide(list_category.size()).times(coeff));
+                    list.set(i, Double.valueOf(1) / (Double.valueOf(list_category.size()) * (coeff)));
                 }
             } else {
-                String[] app_categories=categories.split(" ");
-                Real value=Real.ONE.divide(app_categories.length).times(coeff);
 
+                // if not empty
+                String[] app_categories=categories.split(" ");
+                Double value=Double.valueOf(1)/Double.valueOf(app_categories.length)*(coeff);
+
+                boolean check=false;
                 for (String temp:app_categories){
                     int position=list_category.indexOf(Integer.parseInt(temp));
-                    list.set(position, value);
+
+                    if (position>=0 && position<list_category.size()){
+                        list.set(position, value);
+                        check=true;
+                    }
+                }
+
+                if (!check){
+                    for (int i=0; i<list_category.size(); i++){
+                        list.set(i, Double.valueOf(1)/(Double.valueOf(list_category.size())*(coeff)));
+                    }
                 }
             }
         }
@@ -281,35 +326,35 @@ public class AppReader {
         return list;
     }
 
-    public static List<Real> analyzeGender(String gender, long coeff){
-        List<Real> list=new ArrayList<Real>();
+    public static List<Double> analyzeGender(String gender, long coeff){
+        List<Double> list=new ArrayList<Double>();
         NumberUtils.addZero(list, 1);
 
         if (gender==null){
-            list.set(0, Real.valueOf(0.25));
+            list.set(0, Double.valueOf(0.25));
         } else {
             gender=gender.replace(","," ").trim();
             if (gender.isEmpty()){
-                list.set(0, Real.valueOf(0.25));
+                list.set(0, Double.valueOf(0.25));
             } else {
                 String[] app_gender=gender.split(" ");
                 if (app_gender.length==2){
-                    list.set(0, Real.valueOf(0.25));
+                    list.set(0, Double.valueOf(0.25));
                 } else {
-                    Real value=Real.valueOf(MAX_APP_GENDER-Integer.parseInt(app_gender[0])).divide(MAX_APP_GENDER);
+                    Double value=Double.valueOf(MAX_APP_GENDER - Integer.parseInt(app_gender[0]))/(Double.valueOf(MAX_APP_GENDER));
                     list.set(0, value);
                 }
             }
         }
 
-        list.set(0, list.get(0).times(coeff));
+        list.set(0, list.get(0)*(coeff));
         return list;
     }
 
 
     public static void main(String args[]){
         AppReader reader=new AppReader();
-        DenseMatrix<Real> matrix = reader.read();
+        Basic2DMatrix matrix = reader.read();
 
         System.out.println (matrix.toString());
         NumberUtils.printList("application_list.txt", reader.idList);

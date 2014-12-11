@@ -1,12 +1,12 @@
-package result;
+package com.dangchienhsgs.result;
 
-import org.jscience.mathematics.number.Real;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import sql.AdReader;
-import sql.AppReader;
-import sql.Config;
+import com.dangchienhsgs.sql.AdReader;
+import com.dangchienhsgs.sql.AppReader;
+import com.dangchienhsgs.sql.Config;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -237,9 +237,9 @@ public class PrintCluster {
                 String detail="";
                 while (resultSet.next()){
 
-                    List<Real> listAudiences=AppReader.analyzeAudiences(resultSet.getString(AppReader.APP_AUDIENCES), APP_AUDIENCES_COEFF);
-                    List<Real> listCategories=AppReader.analyzeCategories(resultSet.getString(AppReader.APP_CATEGORY), APP_CATEGORY_COEFF);
-                    List<Real> listGender=AppReader.analyzeGender(resultSet.getString(AppReader.APP_GENDER), APP_GENDER_COEFF);
+                    List<Double> listAudiences=AppReader.analyzeAudiences(resultSet.getString(AppReader.APP_AUDIENCES), APP_AUDIENCES_COEFF);
+                    List<Double> listCategories=AppReader.analyzeCategories(resultSet.getString(AppReader.APP_CATEGORY), APP_CATEGORY_COEFF);
+                    List<Double> listGender=AppReader.analyzeGender(resultSet.getString(AppReader.APP_GENDER), APP_GENDER_COEFF);
 
                     detail=resultSet.getString(AppReader.NAME)+GAP;
 
@@ -329,20 +329,20 @@ public class PrintCluster {
                 String detail="";
                 while (resultSet.next()){
 
-                    List<Real> category=AdReader.analyzeCategories(resultSet.getString(AdReader.ADV_CATEGORY), CATEGORY_COEFF);
-                    List<Real> audiences=AdReader.analyzeAudiences(resultSet.getString(AdReader.ADV_AUDIENCE), CATEGORY_COEFF);
-                    List<Real> area=AdReader.analyzeArea(resultSet.getString(AdReader.ADV_AREA), CATEGORY_COEFF);
+                    List<Double> category=AdReader.analyzeCategories(resultSet.getString(AdReader.AD_CATEGORY), CATEGORY_COEFF);
+                    List<Double> audiences=AdReader.analyzeAudiences(resultSet.getString(AdReader.AD_AUDIENCE), CATEGORY_COEFF);
+                    List<Double> area=AdReader.analyzeArea(resultSet.getString(AdReader.AD_AREA), CATEGORY_COEFF);
 
-                    System.out.println ("Category"+resultSet.getString(AdReader.ADV_CATEGORY));
+                    System.out.println ("Category"+resultSet.getString(AdReader.AD_CATEGORY));
                     System.out.println (category.toString());
 
-                    System.out.println ("Audiences"+resultSet.getString(AdReader.ADV_AUDIENCE));
+                    System.out.println ("Audiences"+resultSet.getString(AdReader.AD_AUDIENCE));
                     System.out.println (audiences.toString());
 
-                    System.out.println ("Area"+resultSet.getString(AdReader.ADV_AREA));
+                    System.out.println ("Area"+resultSet.getString(AdReader.AD_AREA));
                     System.out.println (area.toString());
 
-                    detail=resultSet.getString(AdReader.NAME)+GAP+resultSet.getString(AdReader.ID)+GAP;
+                    detail=resultSet.getString(AdReader.AD_NAME)+GAP+resultSet.getString(AdReader.AD_ID)+GAP;
 
                     for (int j=0; j<category.size(); j++){
                         detail=detail+category.get(j).doubleValue()+GAP;
@@ -356,11 +356,11 @@ public class PrintCluster {
                         detail=detail+area.get(j).doubleValue()+GAP;
                     }
 
-                    detail=detail+resultSet.getString(AdReader.ADV_SIZE)+GAP
-                            +resultSet.getString(AdReader.ADV_TYPE)+GAP
-                            +resultSet.getString(AdReader.GENDER)+GAP
-                            +resultSet.getString(AdReader.SCREEN_SIZE) + GAP
-                            +resultSet.getString(AdReader.ADV_DEVICE);
+                    detail=detail+resultSet.getString(AdReader.AD_SIZE)+GAP
+                            +resultSet.getString(AdReader.AD_TYPE)+GAP
+                            +resultSet.getString(AdReader.AD_GENDER)+GAP
+                            +resultSet.getString(AdReader.AD_SCREEN_SIZE) + GAP
+                            +resultSet.getString(AdReader.AD_DEVICE);
                 }
                 System.out.println("Cluster: " + cluster);
                 result.get(cluster).add(detail);

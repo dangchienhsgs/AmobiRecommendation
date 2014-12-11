@@ -1,15 +1,11 @@
-package sql;
+package com.dangchienhsgs.sql;
 
-import javolution.util.Index;
-import org.jscience.mathematics.number.Real;
-import org.jscience.mathematics.vector.DenseMatrix;
-import org.jscience.mathematics.vector.DenseVector;
+import org.la4j.matrix.dense.Basic2DMatrix;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +26,7 @@ public class LinkReader {
         this.linkIdConverter = linkIdConverter;
     }
 
-    public DenseMatrix<Real> read(){
+    public Basic2DMatrix read(){
         try{
             Class.forName(Config.DB_DRIVER);
             Connection connection= DriverManager.getConnection(Config.DB_URL, Config.DB_USER, Config.DB_PASSWORD);
@@ -43,9 +39,9 @@ public class LinkReader {
             int numColumns=listAppIndex.size();
 
             System.out.println (numRows +" "+numColumns);
-            Real[][] array=new Real[numRows][numColumns];
+            double[][] array=new double[numRows][numColumns];
             for (int i=0; i<numRows; i++){
-                Arrays.fill(array[i], Real.ZERO);
+                Arrays.fill(array[i], Double.valueOf(0));
             }
 
             while (resultSet.next()){
@@ -53,7 +49,7 @@ public class LinkReader {
                 int views=resultSet.getInt(VIEWS);
 
                 // choose value=clicks+views;
-                int value=clicks+views;
+                double value=Double.valueOf(clicks)/Double.valueOf(views);
 
                 String code=resultSet.getString(WIDGET_CODE);
                 int linkID=resultSet.getInt(LINK_ID);
@@ -62,11 +58,11 @@ public class LinkReader {
                 int advIndex=listAdvIndex.indexOf(linkIdConverter.get(linkID));
 
                 if (appIndex>=0 & advIndex>=0){
-                    array[advIndex][appIndex]=array[advIndex][appIndex].plus(Real.valueOf(value));
+                    array[advIndex][appIndex]=array[advIndex][appIndex]+(Double.valueOf(value));
                 }
             }
 
-            DenseMatrix matrix=DenseMatrix.valueOf(array);
+            Basic2DMatrix matrix=new Basic2DMatrix(array);
 
             connection.close();
             return matrix;
@@ -80,4 +76,7 @@ public class LinkReader {
         }
     }
 
+
+    public static void main(String args[]){
+    }
 }

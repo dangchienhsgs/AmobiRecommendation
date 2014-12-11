@@ -1,41 +1,38 @@
-package utils;
+package com.dangchienhsgs.utils;
 
-import org.jscience.mathematics.number.Real;
-import org.jscience.mathematics.vector.DenseMatrix;
-import org.jscience.mathematics.vector.DenseVector;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.la4j.matrix.Matrix;
+import org.la4j.vector.Vector;
 
 
 public class KMeans {
-    private DenseMatrix<Real> data;
+    private Matrix data;
     private int numRows;
     private int K;
     private int dimension;
-    private DenseVector<Real> center[];
-    private DenseVector<Real> x[];
+    private Vector center[];
+    private Vector x[];
     private double w[][];
 
 
-    public KMeans(int K, DenseMatrix<Real> data) {
+    public KMeans(int K, Matrix data) {
         this.K = K;
         this.data = data;
     }
 
     public void init() {
 
-        numRows = data.getNumberOfRows();
-        dimension = data.getNumberOfColumns();
+        numRows = data.rows();
+        dimension = data.columns();
 
-        x = new DenseVector[numRows];
+        x = new Vector[numRows];
         for (int i = 0; i < numRows; i++) {
             x[i] = data.getRow(i);
         }
 
 
         // Init center
-        center = new DenseVector[K];
+        center = new Vector[K];
 
         w = new double[numRows][K];
         for (int i = 0; i < numRows; i++) {
@@ -45,14 +42,14 @@ public class KMeans {
 
     public void eStep() {
         for (int i = 0; i < K; i++) {
-            DenseVector<Real> sum = x[0].times(Real.valueOf(w[0][i]));
+            Vector sum = x[0].multiply(w[0][i]);
             double temp = w[0][i];
             for (int j = 1; j < numRows; j++) {
-                sum = sum.plus(x[j].times(Real.valueOf(w[j][i])));
+                sum = sum.add(x[j].multiply(w[j][i]));
                 temp = temp + w[j][i];
             }
             if (temp != 0) {
-                center[i] = sum.times(Real.ONE.divide(Real.valueOf(temp)));
+                center[i] = sum.divide(temp);
             }
         }
     }
@@ -65,10 +62,10 @@ public class KMeans {
             }
         }
         for (int i = 0; i < numRows; i++) {
-            Real min = MatrixUtilities.distanceBetweenVector(x[i], center[0]);
+            Double min = MatrixUtilities.distanceBetweenVector(x[i], center[0]);
             int index = 0;
             for (int j = 1; j < K; j++) {
-                Real temp = MatrixUtilities.distanceBetweenVector(x[i], center[j]);
+                Double temp = MatrixUtilities.distanceBetweenVector(x[i], center[j]);
                 if (temp.compareTo(min) < 0) {
                     min = temp;
                     index = j;
@@ -76,10 +73,11 @@ public class KMeans {
             }
             w[i][index] = 1;
         }
-        //printW();
+
     }
 
-    public DenseMatrix<Real> execute(int times) {
+
+    public Matrix execute(int times) {
         init();
 
         for (int i = 0; i < times; i++) {

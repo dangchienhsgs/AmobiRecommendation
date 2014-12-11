@@ -21,6 +21,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="PROVIDED" name="Tomcat 8.0.15" level="application_server_libraries" />
     <orderEntry type="library" name="mysql-connector-java-5.1.32-bin" level="project" />
-    <orderEntry type="library" name="jscience" level="project" />
+    <orderEntry type="library" name="la4j-0.4.9" level="project" />
   </component>
 </module>

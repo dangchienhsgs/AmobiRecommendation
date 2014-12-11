@@ -1,4 +1,4 @@
-<%@ page import="sql.Config" %>
+<%@ page import="com.dangchienhsgs.sql.Config" %>
 <%@ page import="java.sql.Connection" %>
 <%@ page import="java.sql.DriverManager" %>
 <%@ page import="java.sql.ResultSet" %>

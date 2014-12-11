@@ -1,10 +1,10 @@
-package sql;
+package com.dangchienhsgs.sql;
 
 import java.io.IOException;
 import java.sql.*;
 
 public class Config {
-    // sql.Config of JDBC
+    // Config of JDBC
     public static final String DB_DRIVER = "com.mysql.jdbc.Driver";
     public static final String DB_URL = "jdbc:mysql://localhost/amobi.vn";
     public static final String DB_USER = "root";
